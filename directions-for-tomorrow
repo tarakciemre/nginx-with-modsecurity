@@ -1,0 +1,14 @@
+This is for following the instructions.
+https://github.com/thermoio/docs/blob/master/security/installing-modsec-for-nginx-on-centos7.md
+
+I have set it up so that the nginx can now be seen in systemctl as running.
+
+* However, i cannot find nginx.conf where it is supposed to be.
+
+** I found the issue, the installation paths are different in my machine and in the directives on the internet.
+
+* [ ] Issue: The packages are being installed every time i re-start the machine. If I build a docker image with the neccessary packages built into it, I will not have to install them again every time.
+
+** When I enter a script that is malicious in my browser, it is not allowed.
+
+** You can see the logs of that in /var/log/nginx log files, where false access attempts are shown
