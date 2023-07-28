@@ -1,4 +1,7 @@
 FROM centos:7
+
+# ######################################################################################################################
+# Setup systemd
 ENV container docker
 RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == \
 systemd-tmpfiles-setup.service ] || rm -f $i; done); \
@@ -9,18 +12,20 @@ rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
 rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
 rm -f /lib/systemd/system/basic.target.wants/*;\
 rm -f /lib/systemd/system/anaconda.target.wants/*;
-COPY cagri.crt /etc/pki/ca-trust/source/anchors/cagri.crt
 
-# Installation
+# ######################################################################################################################
+# Network Setup
+COPY cagri.crt /etc/pki/ca-trust/source/anchors/cagri.crt
 RUN update-ca-trust
+
+# ######################################################################################################################
+# Installation
 RUN yum install epel-release -y
 RUN yum install epel-release -y 
 RUN yum install wget -y
 RUN yum install gcc -y
 RUN yum install pcre -y
 RUN yum install pcre-devel -y
-RUN yum install openssl -y
-RUN yum install openssl-devel -y
 RUN yum install gd -y
 RUN yum install gd-devel -y
 RUN yum install libtool -y
@@ -44,6 +49,7 @@ WORKDIR /usr/src
 RUN wget http://nginx.org/download/nginx-1.20.0.tar.gz
 RUN tar -zxvf nginx-1.20.0.tar.gz && rm -f nginx-1.20.0.tar.gz
 
+# ######################################################################################################################
 # == Compile ModSecurity
 # COPY ModSecurity-nginx_refactoring /usr/src/ModSecurity
 WORKDIR /usr/src
@@ -55,6 +61,7 @@ RUN ./autogen.sh
 RUN ./configure --enable-standalone-module --disable-mlogc
 RUN make
 
+# ######################################################################################################################
 # == Compile Nginx
 RUN groupadd -r nginx
 RUN useradd -r -g nginx -s /sbin/nologin -M nginx
@@ -66,20 +73,26 @@ RUN make
 RUN make install
  
 
+# ######################################################################################################################
 # === Configure NGINX
 COPY nginx.conf /etc/nginx/nginx.conf 
 COPY nginx.service /lib/systemd/system/nginx.service
 
 RUN sed -i "s/#user  nobody;/user nginx nginx;/" /etc/nginx/nginx.conf
 
-RUN mkdir /etc/nginx/certificate
-WORKDIR /etc/nginx/certificate
+#RUN mkdir /etc/nginx/certificate
+
+# ######################################################################################################################
+# === Configure Certificate SSL
+WORKDIR /etc/nginx
  
 RUN openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out nginx-certificate.crt -keyout nginx.key -subj "/C=AA/ST=AA/L=AA/O=AA/CN=www.aaa.com"
 
 COPY update-includes.sh /root/update-includes.sh
 RUN /root/update-includes.sh
 
+# ######################################################################################################################
+# === Configure modsecurity logs etc
 RUN cp /usr/src/ModSecurity/modsecurity.conf-recommended /etc/nginx/modsecurity.conf
 RUN cp /usr/src/ModSecurity/unicode.mapping /etc/nginx/
 
@@ -91,7 +104,7 @@ RUN touch /var/log/nginx/modsec_audit.log
 
 RUN chown nginx.root /var/log/nginx
 
-
+# ######################################################################################################################
 ## === Setup OWASP
 # COPY owasp-modsecurity-crs /etc/nginx/owasp-modsecurity-crs
 WORKDIR /etc/nginx
