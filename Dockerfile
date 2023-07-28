@@ -115,12 +115,8 @@ WORKDIR /etc/nginx/owasp-modsecurity-crs/rules
 RUN mv REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
 RUN mv RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
 
-
-RUN cat /etc/nginx/modsecurity.conf | grep modsec_audit.log
-RUN sed -i "s/SecAuditLog \/usr\/local\/nginx\/logs\/modsec_audit.log/SecAuditLog \/var\/logs\/nginx\/modsec_audit.log/"        /etc/nginx/modsecurity.conf
-RUN cat /etc/nginx/modsecurity.conf | grep modsec_audit.log
-
 COPY modsecurity.conf /etc/nginx/modsecurity.conf
+COPY crs-setup.conf /etc/nginx/owasp-modsecurity-crs/crs-setup.conf
 
 VOLUME [ "/sys/fs/cgroup" ]
 #RUN /usr/sbin/init
