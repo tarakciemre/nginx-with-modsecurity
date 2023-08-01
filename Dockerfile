@@ -20,8 +20,9 @@ RUN update-ca-trust
 
 # ######################################################################################################################
 # Installation
-RUN yum install epel-release -y
-RUN yum install epel-release -y 
+RUN yum update -y
+RUN yum --enablerepo=extras install epel-release -y
+RUN yum update -y
 RUN yum install wget -y
 RUN yum install gcc -y
 RUN yum install pcre -y
@@ -72,6 +73,50 @@ RUN ./configure --user=nginx --group=nginx --prefix=/var/www/html --sbin-path=/u
 RUN make
 RUN make install
  
+# ######################################################################################################################
+# === Setup Python dependencies
+
+RUN yum install postgresql-libs -y
+# RUN yum install python3 -y
+RUN yum install python3-pip -y
+RUN yum install python3-devel -y
+# RUN yum install build-essential -y
+# RUN yum install libssl-dev -y
+# RUN yum install libffi-dev -y
+RUN yum install python3-setuptools -y
+RUN yum install libffi-devel -y
+# RUN yum install python3-virtualenv
+# .. causing problesm -> RUN pip3 install uwsgi
+# RUN pip3 install virtualenv
+
+# == install PYTHON
+RUN mkdir /root/python-project
+WORKDIR /root/python-project 
+# RUN wget https://www.python.org/ftp/python/3.9.16/Python-3.9.16.tgz 
+RUN wget https://www.python.org/ftp/python/3.8.16/Python-3.8.16.tgz
+RUN tar xvf Python-3.8.16.tgz
+WORKDIR /root/python-project/Python-3.8.16
+RUN ./configure --enable-optimizations 
+RUN make altinstall 
+WORKDIR /root/python-project 
+RUN rm Python-3.8.16.tgz 
+
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install wheel
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install setuptools-rust
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install --upgrade pip
+RUN yum install postgresql-devel -y
+RUN yum install gcc openssl-devel bzip2-devel libffi-devel zlib-devel -y
+# RUN pip3.8 --cert /etc/pki/tls/cert.pem --default-timeout=50 install cmake
+
+WORKDIR /root/python-project 
+RUN python3.8 -m venv venv 
+RUN source /root/python-project/venv/bin/activate
+
+# install requirements
+COPY requirements.txt /root/python-project/requirements.txt
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install -r requirements.txt 
+# RUN pip3.8 --cert /etc/pki/tls/cert.pem install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org pip setuptools
+
 
 # ######################################################################################################################
 # === Configure NGINX
@@ -114,6 +159,10 @@ RUN mv crs-setup.conf.example crs-setup.conf
 WORKDIR /etc/nginx/owasp-modsecurity-crs/rules
 RUN mv REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
 RUN mv RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+
+RUN mkdir /var/www/html/flask
+COPY ../flask-backend/* /var/www/html/flask/
+# /var/www/html/html
 
 COPY modsecurity.conf /etc/nginx/modsecurity.conf
 COPY crs-setup.conf /etc/nginx/owasp-modsecurity-crs/crs-setup.conf
