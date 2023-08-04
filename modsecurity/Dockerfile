@@ -101,8 +101,6 @@ RUN make altinstall
 WORKDIR /root/python-project 
 RUN rm Python-3.8.16.tgz 
 
-RUN pip3.8 --cert /etc/pki/tls/cert.pem install wheel
-RUN pip3.8 --cert /etc/pki/tls/cert.pem install setuptools-rust
 RUN pip3.8 --cert /etc/pki/tls/cert.pem install --upgrade pip
 RUN yum install postgresql-devel -y
 RUN yum install gcc openssl-devel bzip2-devel libffi-devel zlib-devel -y
@@ -111,62 +109,16 @@ RUN yum install gcc openssl-devel bzip2-devel libffi-devel zlib-devel -y
 WORKDIR /root/python-project 
 RUN python3.8 -m venv venv 
 RUN source /root/python-project/venv/bin/activate
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install wheel
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install setuptools-rust
 
 # install requirements
-COPY requirements.txt /root/python-project/requirements.txt
+RUN git clone https://github.com/tarakciemre/flask-user-management flask
+WORKDIR /root/python-project/flask
 RUN pip3.8 --cert /etc/pki/tls/cert.pem install -r requirements.txt 
 # RUN pip3.8 --cert /etc/pki/tls/cert.pem install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org pip setuptools
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install uwsgi
+RUN pip3.8 --cert /etc/pki/tls/cert.pem install psycopg2
 
-
-# ######################################################################################################################
-# === Configure NGINX
-COPY nginx.conf /etc/nginx/nginx.conf 
-COPY nginx.service /lib/systemd/system/nginx.service
-
-RUN sed -i "s/#user  nobody;/user nginx nginx;/" /etc/nginx/nginx.conf
-
-#RUN mkdir /etc/nginx/certificate
-
-# ######################################################################################################################
-# === Configure Certificate SSL
-WORKDIR /etc/nginx
- 
-RUN openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out nginx-certificate.crt -keyout nginx.key -subj "/C=AA/ST=AA/L=AA/O=AA/CN=www.aaa.com"
-
-COPY update-includes.sh /root/update-includes.sh
-RUN /root/update-includes.sh
-
-# ######################################################################################################################
-# === Configure modsecurity logs etc
-RUN cp /usr/src/ModSecurity/modsecurity.conf-recommended /etc/nginx/modsecurity.conf
-RUN cp /usr/src/ModSecurity/unicode.mapping /etc/nginx/
-
-RUN sed -i "s/SecRuleEngine DetectionOnly/SecRuleEngine On/" /etc/nginx/modsecurity.conf
-RUN sed -i "s/SecAuditLogType Serial/SecAuditLogType Concurrent/" /etc/nginx/modsecurity.conf
-RUN mkdir /etc/nginx/logs
-RUN touch /var/log/nginx/modsec_audit.log
-#RUN touch /etc/nginx/logs/modsec_audit.log
-
-RUN chown nginx.root /var/log/nginx
-
-# ######################################################################################################################
-## === Setup OWASP
-# COPY owasp-modsecurity-crs /etc/nginx/owasp-modsecurity-crs
-WORKDIR /etc/nginx
-RUN cp -R /usr/src/owasp-modsecurity-crs /etc/nginx/owasp-modsecurity-crs
-WORKDIR /etc/nginx/owasp-modsecurity-crs
-RUN mv crs-setup.conf.example crs-setup.conf
-WORKDIR /etc/nginx/owasp-modsecurity-crs/rules
-RUN mv REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
-RUN mv RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
-
-RUN mkdir /var/www/html/flask
-COPY ../flask-backend/* /var/www/html/flask/
-# /var/www/html/html
-
-COPY modsecurity.conf /etc/nginx/modsecurity.conf
-COPY crs-setup.conf /etc/nginx/owasp-modsecurity-crs/crs-setup.conf
-
+# RUN mkdir /var/lib/pgsql/11/data/flask/
 VOLUME [ "/sys/fs/cgroup" ]
-#RUN /usr/sbin/init
-RUN systemctl enable nginx

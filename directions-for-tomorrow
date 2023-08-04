@@ -12,3 +12,13 @@ I have set it up so that the nginx can now be seen in systemctl as running.
 ** When I enter a script that is malicious in my browser, it is not allowed.
 
 ** You can see the logs of that in /var/log/nginx log files, where false access attempts are shown
+
+I will be using Jinja templates
+
+# For August 2nd
+
+Add git installation of the flask project.
+
+So that you will not have to add the files every time.
+
+Chck out the video "HOW TO DEPLOY FLASK APP WITH NGINX" by Innovate Yourself
