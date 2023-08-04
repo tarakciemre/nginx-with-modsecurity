@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+        modsecurity:
+                build: ./modsecurity
+                ports:
+                        - 8080:443
+
