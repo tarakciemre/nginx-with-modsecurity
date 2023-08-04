@@ -15,7 +15,7 @@ rm -f /lib/systemd/system/anaconda.target.wants/*;
 
 # ######################################################################################################################
 # Network Setup
-COPY cagri.crt /etc/pki/ca-trust/source/anchors/cagri.crt
+COPY ssl.crt /etc/pki/ca-trust/source/anchors/ssl.crt
 RUN update-ca-trust
 
 # ######################################################################################################################
