@@ -120,4 +120,6 @@ COPY crs-setup.conf /etc/nginx/owasp-modsecurity-crs/crs-setup.conf
 
 VOLUME [ "/sys/fs/cgroup" ]
 #RUN /usr/sbin/init
-RUN systemctl enable nginx
+# RUN systemctl enable nginx
+CMD ["/usr/sbin/nginx","-g","daemon off;"]
+
